@@ -2,93 +2,154 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Mapa faith sp</title>
+  <title>Mapa de Usuários</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <style>
-    #map { height: 500px; width: 100%; }
-    .form { margin: 10px; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background: #2d89ef;
+      color: white;
+      padding: 12px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px;
+      background: #f5f5f5;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .form input {
+      flex: 1 1 200px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .form button {
+      padding: 10px 20px;
+      border: none;
+      background: #2d89ef;
+      color: white;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .form button:hover {
+      background: #1b5fbd;
+    }
+
+    #map {
+      flex: 1;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
 
-<h2>Mapa faith sp</h2>
+  <header>🌍 Mapa de Usuários</header>
 
-<div class="form">
-  <input type="text" id="nome" placeholder="Digite seu nome">
-  <input type="text" id="cidade" placeholder="Digite sua cidade (ex: São paulo)">
-  <button onclick="adicionarMarcador()">Adicionar</button>
-</div>
+  <div class="form">
+    <input type="text" id="nome" placeholder="Digite seu nome">
+    <input type="text" id="cidade" placeholder="Digite sua cidade (ex: Embu das Artes)">
+    <button onclick="adicionarMarcador()">Adicionar</button>
+  </div>
 
-<div id="map"></div>
+  <div id="map"></div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/@supabase/supabase-js"></script>
-<script>
-  // 🔑 Configure seu Supabase
-  const supabaseUrl = "https://fuztuqibppbzuyqmetxm.supabase.co"; 
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1enR1cWlicHBienV5cW1ldHhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzIxNDAsImV4cCI6MjA3MTcwODE0MH0.cpDxMS35dnW3NTXA8iunLVoW3rXYRfKDX0vbV1eX-eI"; 
-  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <script>
+    // 🔑 Configure seu Supabase
+const supabaseUrl = "https://fuztuqibppbzuyqmetxm.supabase.co"; 
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1enR1cWlicHBienV5cW1ldHhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzIxNDAsImV4cCI6MjA3MTcwODE0MH0.cpDxMS35dnW3NTXA8iunLVoW3rXYRfKDX0vbV1eX-eI";
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-  // Inicializa o mapa
-  var map = L.map('map').setView([-23.55, -46.63], 9);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
+    // Inicializa o mapa
+    var map = L.map('map').setView([-23.55, -46.63], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
 
-  // Função para adicionar marcador
-  async function adicionarMarcador() {
-    var nome = document.getElementById("nome").value;
-    var cidade = document.getElementById("cidade").value;
+    // Função para adicionar marcador
+    async function adicionarMarcador() {
+      var nome = document.getElementById("nome").value.trim();
+      var cidade = document.getElementById("cidade").value.trim();
 
-    if (!nome || !cidade) {
-      alert("Preencha o nome e a cidade!");
-      return;
+      if (!nome || !cidade) {
+        alert("Preencha o nome e a cidade!");
+        return;
+      }
+
+      // Busca coordenadas pelo nome da cidade
+      let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cidade}`);
+      let data = await response.json();
+
+      if (data.length > 0) {
+        let lat = parseFloat(data[0].lat);
+        let lon = parseFloat(data[0].lon);
+
+        // 🔹 Salva no Supabase
+        let { error } = await supabaseClient
+          .from("usuarios_mapa")
+          .insert([{ nome, cidade, lat, lon }]);
+
+        if (error) {
+          console.error(error);
+          alert("Erro ao salvar no banco!");
+        } else {
+          L.marker([lat, lon])
+            .addTo(map)
+            .bindPopup(`<b>${nome}</b><br>${cidade}`)
+            .openPopup();
+          map.setView([lat, lon], 12);
+
+          // Limpa os campos
+          document.getElementById("nome").value = "";
+          document.getElementById("cidade").value = "";
+        }
+      } else {
+        alert("Cidade não encontrada!");
+      }
     }
 
-    // Busca coordenadas pelo nome da cidade
-    let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cidade}`);
-    let data = await response.json();
-
-    if (data.length > 0) {
-      let lat = parseFloat(data[0].lat);
-      let lon = parseFloat(data[0].lon);
-
-      // 🔹 Salva no Supabase
-      let { error } = await supabaseClient
-        .from("usuarios_mapa")
-        .insert([{ nome, cidade, lat, lon }]);
-
+    // Carregar todos os pontos existentes
+    async function carregarUsuarios() {
+      let { data, error } = await supabaseClient.from("usuarios_mapa").select("*");
       if (error) {
         console.error(error);
-        alert("Erro ao salvar no banco!");
-      } else {
-        L.marker([lat, lon])
-          .addTo(map)
-          .bindPopup(`<b>${nome}</b><br>${cidade}`)
-          .openPopup();
-        map.setView([lat, lon], 12);
+        return;
       }
-    } else {
-      alert("Cidade não encontrada!");
+      data.forEach(u => {
+        L.marker([u.lat, u.lon])
+          .addTo(map)
+          .bindPopup(`<b>${u.nome}</b><br>${u.cidade}`);
+      });
     }
-  }
 
-  // Carregar todos os pontos existentes
-  async function carregarUsuarios() {
-    let { data, error } = await supabaseClient.from("usuarios_mapa").select("*");
-    if (error) {
-      console.error(error);
-      return;
-    }
-    data.forEach(u => {
-      L.marker([u.lat, u.lon])
-        .addTo(map)
-        .bindPopup(`<b>${u.nome}</b><br>${u.cidade}`);
-    });
-  }
-
-  carregarUsuarios();
-</script>
+    carregarUsuarios();
+  </script>
 
 </body>
 </html>
