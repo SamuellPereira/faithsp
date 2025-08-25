@@ -40,6 +40,7 @@
       cursor: pointer;
       touch-action: manipulation;
     }
+    .form button:active { background: #222; }
     .form button:hover { background: #333; }
 
     /* MAPA */
@@ -86,7 +87,7 @@
 <div class="form">
   <input type="text" id="nome" placeholder="Digite seu nome">
   <input type="text" id="cidade" placeholder="Digite sua cidade (ex: Embu das Artes)">
-  <button onclick="adicionarMarcador()">Adicionar</button>
+  <button id="btnAdicionar">Adicionar</button>
 </div>
 
 <div id="map"></div>
@@ -96,7 +97,7 @@
 <script src="https://unpkg.com/@supabase/supabase-js"></script>
 <script>
 const supabaseUrl = "https://fuztuqibppbzuyqmetxm.supabase.co"; 
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1enR1cWlicHBienV5cW1ldHhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzIxNDAsImV4cCI6MjA3MTcwODE0MH0.cpDxMS35dnW3NTXA8iunLVoW3rXYRfKDX0vbV1eX-eI"; 
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1enR1cWlicHBienV5cW1ldHhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzIxNDAsImV4cCI6MjA3MTcwODE0MH0.cpDxMS35dnW3NTXA8iunLVoW3rXYRfKDX0vbV1eX-eI"; 
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 var map = L.map('map').setView([-23.55, -46.63], 9);
@@ -110,25 +111,29 @@ async function adicionarMarcador() {
   var cidade = document.getElementById("cidade").value.trim();
   if(!nome || !cidade) { alert("Preencha o nome e a cidade!"); return; }
 
-  let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cidade}`);
-  let data = await response.json();
+  try {
+    let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cidade}`);
+    let data = await response.json();
 
-  if(data.length > 0){
-    let lat = parseFloat(data[0].lat);
-    let lon = parseFloat(data[0].lon);
+    if(data.length > 0){
+      let lat = parseFloat(data[0].lat);
+      let lon = parseFloat(data[0].lon);
 
-    let { error } = await supabaseClient.from("usuarios_mapa")
-      .insert([{ nome, cidade, lat, lon }]);
+      let { error } = await supabaseClient.from("usuarios_mapa")
+        .insert([{ nome, cidade, lat, lon }]);
 
-    if(error){ console.error(error); alert("Erro ao salvar no banco!"); }
-    else {
-      document.getElementById("nome").value = "";
-      document.getElementById("cidade").value = "";
-      carregarUsuarios(); 
-    }
-  } else { alert("Cidade não encontrada!"); }
+      if(error){ console.error(error); alert("Erro ao salvar no banco!"); }
+      else {
+        document.getElementById("nome").value = "";
+        document.getElementById("cidade").value = "";
+        carregarUsuarios(); 
+      }
+    } else { alert("Cidade não encontrada!"); }
+  } catch(err) {
+    console.error("Erro na requisição:", err);
+    alert("Erro de conexão. Tente novamente.");
+  }
 }
-
 
 async function carregarUsuarios(){
   let { data, error } = await supabaseClient.from("usuarios_mapa").select("*");
@@ -164,6 +169,12 @@ async function carregarUsuarios(){
 }
 
 carregarUsuarios();
+
+// --- Aqui a diferença: capturando o clique via JS ---
+document.getElementById("btnAdicionar").addEventListener("click", (e) => {
+  e.preventDefault(); // impede refresh
+  adicionarMarcador();
+});
 </script>
 
 </body>
