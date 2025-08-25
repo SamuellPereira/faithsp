@@ -131,13 +131,6 @@ async function adicionarMarcador() {
   } else { alert("Cidade não encontrada!"); }
 }
 
-// Função para calcular ponto central
-function pontoCentral(usuarios){
-  let latTotal = 0, lonTotal = 0;
-  usuarios.forEach(u => { latTotal += u.lat; lonTotal += u.lon; });
-  return { lat: latTotal/usuarios.length, lon: lonTotal/usuarios.length };
-}
-
 async function carregarUsuarios(){
   let { data, error } = await supabaseClient.from("usuarios_mapa").select("*");
   if(error){ console.error(error); return; }
