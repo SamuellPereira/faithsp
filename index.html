@@ -26,7 +26,7 @@
       padding: 10px;
       justify-content: center;
     }
-    .form input, .form button {
+    .form input, .form button, .form select {
       flex: 1 1 100%;
       padding: 12px;
       border-radius: 8px;
@@ -75,7 +75,7 @@
 
     /* Responsividade */
     @media (min-width: 600px) {
-      .form input, .form button {
+      .form input, .form button, .form select {
         flex: 1 1 45%;
       }
     }
@@ -83,12 +83,75 @@
 </head>
 <body>
 
-<header><img src="Captura de tela 2025-08-26 080640.png" alt="" srcset="" height="50px" width="50px" ></header>
+<header><img src="Captura de tela 2025-08-26 080640.png" alt="" height="50px" width="50px"></header>
 
 <div class="form">
   <input type="text" id="nome" placeholder="Digite seu nome">
   <input type="text" id="cidade" placeholder="Digite sua cidade (ex: Embu das Artes)">
+  <select id="estado">
+    <option value="">Selecione seu estado</option>
+    <option value="AC">Acre (AC)</option>
+    <option value="AL">Alagoas (AL)</option>
+    <option value="AP">Amapá (AP)</option>
+    <option value="AM">Amazonas (AM)</option>
+    <option value="BA">Bahia (BA)</option>
+    <option value="CE">Ceará (CE)</option>
+    <option value="DF">Distrito Federal (DF)</option>
+    <option value="ES">Espírito Santo (ES)</option>
+    <option value="GO">Goiás (GO)</option>
+    <option value="MA">Maranhão (MA)</option>
+    <option value="MT">Mato Grosso (MT)</option>
+    <option value="MS">Mato Grosso do Sul (MS)</option>
+    <option value="MG">Minas Gerais (MG)</option>
+    <option value="PA">Pará (PA)</option>
+    <option value="PB">Paraíba (PB)</option>
+    <option value="PR">Paraná (PR)</option>
+    <option value="PE">Pernambuco (PE)</option>
+    <option value="PI">Piauí (PI)</option>
+    <option value="RJ">Rio de Janeiro (RJ)</option>
+    <option value="RN">Rio Grande do Norte (RN)</option>
+    <option value="RS">Rio Grande do Sul (RS)</option>
+    <option value="RO">Rondônia (RO)</option>
+    <option value="RR">Roraima (RR)</option>
+    <option value="SC">Santa Catarina (SC)</option>
+    <option value="SP">São Paulo (SP)</option>
+    <option value="SE">Sergipe (SE)</option>
+    <option value="TO">Tocantins (TO)</option>
+  </select>
   <button id="btnAdicionar">Adicionar</button>
+</div>
+
+<div class="form">
+  <select id="filtroEstado" onchange="filtrarUsuarios()">
+    <option value="">-- Filtrar por Estado --</option>
+    <option value="AC">Acre (AC)</option>
+    <option value="AL">Alagoas (AL)</option>
+    <option value="AP">Amapá (AP)</option>
+    <option value="AM">Amazonas (AM)</option>
+    <option value="BA">Bahia (BA)</option>
+    <option value="CE">Ceará (CE)</option>
+    <option value="DF">Distrito Federal (DF)</option>
+    <option value="ES">Espírito Santo (ES)</option>
+    <option value="GO">Goiás (GO)</option>
+    <option value="MA">Maranhão (MA)</option>
+    <option value="MT">Mato Grosso (MT)</option>
+    <option value="MS">Mato Grosso do Sul (MS)</option>
+    <option value="MG">Minas Gerais (MG)</option>
+    <option value="PA">Pará (PA)</option>
+    <option value="PB">Paraíba (PB)</option>
+    <option value="PR">Paraná (PR)</option>
+    <option value="PE">Pernambuco (PE)</option>
+    <option value="PI">Piauí (PI)</option>
+    <option value="RJ">Rio de Janeiro (RJ)</option>
+    <option value="RN">Rio Grande do Norte (RN)</option>
+    <option value="RS">Rio Grande do Sul (RS)</option>
+    <option value="RO">Rondônia (RO)</option>
+    <option value="RR">Roraima (RR)</option>
+    <option value="SC">Santa Catarina (SC)</option>
+    <option value="SP">São Paulo (SP)</option>
+    <option value="SE">Sergipe (SE)</option>
+    <option value="TO">Tocantins (TO)</option>
+  </select>
 </div>
 
 <div class="form">
@@ -104,135 +167,138 @@
 <script>
   const supabaseUrl = "https://fuztuqibppbzuyqmetxm.supabase.co"; 
   const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1enR1cWlicHBienV5cW1ldHhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzIxNDAsImV4cCI6MjA3MTcwODE0MH0.cpDxMS35dnW3NTXA8iunLVoW3rXYRfKDX0vbV1eX-eI"; 
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-var map = L.map('map').setView([-23.55, -46.63], 9);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap'
-}).addTo(map);
+   var map = L.map('map').setView([-23.55, -46.63], 9);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
 
-let usuariosCache = []; // guarda os usuários carregados
-let marcadorBusca = null; // guarda o marcador da última cidade buscada
+  let usuariosCache = [];
+  let marcadorBusca = null;
 
-function calcularDistancia(lat1, lon1, lat2, lon2){
-  const R = 6371; // km
-  const dLat = (lat2-lat1) * Math.PI/180;
-  const dLon = (lon2-lon1) * Math.PI/180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
-    Math.sin(dLon/2) * Math.sin(dLon/2); 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-  return (R * c).toFixed(1); // uma casa decimal
-}
-
-// Função para adicionar marcador
-async function adicionarMarcador() {
-  var nome = document.getElementById("nome").value.trim();
-  var cidade = document.getElementById("cidade").value.trim();
-  if(!nome || !cidade) { alert("Preencha o nome e a cidade!"); return; }
-
-  try {
-    let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cidade}`);
-    let data = await response.json();
-
-    if(data.length > 0){
-      let lat = parseFloat(data[0].lat);
-      let lon = parseFloat(data[0].lon);
-
-      let { error } = await supabaseClient.from("usuarios_mapa")
-        .insert([{ nome, cidade, lat, lon }]);
-
-      if(error){ console.error(error); alert("Erro ao salvar no banco!"); }
-      else {
-        document.getElementById("nome").value = "";
-        document.getElementById("cidade").value = "";
-        carregarUsuarios(); 
-      }
-    } else { alert("Cidade não encontrada!"); }
-  } catch(err) {
-    console.error("Erro na requisição:", err);
-    alert("Erro de conexão. Tente novamente.");
+  function calcularDistancia(lat1, lon1, lat2, lon2){
+    const R = 6371;
+    const dLat = (lat2-lat1) * Math.PI/180;
+    const dLon = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(dLat/2)**2 +
+              Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
+              Math.sin(dLon/2)**2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return (R * c).toFixed(1);
   }
-}
 
-async function carregarUsuarios(){
-  let { data, error } = await supabaseClient.from("usuarios_mapa").select("*");
-  if(error){ console.error(error); return; }
+  async function adicionarMarcador() {
+    var nome = document.getElementById("nome").value.trim();
+    var cidade = document.getElementById("cidade").value.trim();
+    var estado = document.getElementById("estado").value.trim();
+    if(!nome || !cidade || !estado) { alert("Preencha nome, cidade e estado!"); return; }
 
-  usuariosCache = data; // guarda para uso no cálculo
+    try {
+      let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cidade},${estado},Brasil`);
+      let data = await response.json();
 
-  const listaDiv = document.getElementById("listaUsuarios");
-  listaDiv.innerHTML = "<b>Membros Faith Sp:</b>";
+      if(data.length > 0){
+        let lat = parseFloat(data[0].lat);
+        let lon = parseFloat(data[0].lon);
 
-  map.eachLayer((layer) => {
-    if(layer instanceof L.Marker && layer !== marcadorBusca) map.removeLayer(layer); 
+        let { error } = await supabaseClient.from("usuarios_mapa")
+          .insert([{ nome, cidade, estado, lat, lon }]);
+
+        if(error){ console.error(error); alert("Erro ao salvar no banco!"); }
+        else {
+          document.getElementById("nome").value = "";
+          document.getElementById("cidade").value = "";
+          document.getElementById("estado").value = "";
+          carregarUsuarios(); 
+        }
+      } else { alert("Cidade não encontrada!"); }
+    } catch(err) {
+      console.error("Erro:", err);
+      alert("Erro de conexão. Tente novamente.");
+    }
+  }
+
+  async function carregarUsuarios(estadoFiltro = ""){
+    let query = supabaseClient.from("usuarios_mapa").select("*");
+    if(estadoFiltro) query = query.eq("estado", estadoFiltro);
+
+    let { data, error } = await query;
+    if(error){ console.error(error); return; }
+
+    usuariosCache = data;
+
+    const listaDiv = document.getElementById("listaUsuarios");
+    listaDiv.innerHTML = "<b>Membros Faith Sp:</b>";
+
+    // remove marcadores antigos (mas mantém busca)
+    map.eachLayer((layer) => {
+      if(layer instanceof L.Marker && layer !== marcadorBusca) map.removeLayer(layer); 
+    });
+
+    data.forEach(u => {
+      L.marker([u.lat, u.lon])
+        .addTo(map)
+        .bindPopup(`<b>${u.nome}</b><br>${u.cidade}/${u.estado}`);
+      
+      const item = document.createElement("div");
+      item.textContent = `${u.nome} - ${u.cidade} - ${u.estado}`;
+      listaDiv.appendChild(item);
+    });
+  }
+
+  function filtrarUsuarios(){
+    let estado = document.getElementById("filtroEstado").value;
+    carregarUsuarios(estado);
+  }
+
+  carregarUsuarios();
+
+  document.getElementById("btnAdicionar").addEventListener("click", (e) => {
+    e.preventDefault();
+    adicionarMarcador();
   });
 
-  data.forEach(u => {
-    L.marker([u.lat, u.lon])
-      .addTo(map)
-      .bindPopup(`<b>${u.nome}</b><br>${u.cidade}`);
-    
-    const item = document.createElement("div");
-    item.textContent = `${u.nome} - ${u.cidade}`;
-    listaDiv.appendChild(item);
+  document.getElementById("btnBuscarCidade").addEventListener("click", async (e) => {
+    e.preventDefault();
+    const cidadeBusca = document.getElementById("cidadeBusca").value.trim();
+    if(!cidadeBusca){ alert("Digite uma cidade!"); return; }
+
+    try {
+      let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cidadeBusca},Brasil`);
+      let data = await response.json();
+
+      if(data.length > 0){
+        let latBusca = parseFloat(data[0].lat);
+        let lonBusca = parseFloat(data[0].lon);
+
+        const listaDiv = document.getElementById("listaUsuarios");
+        listaDiv.innerHTML = `<b>Membros Faith Sp: (distância até ${cidadeBusca}):</b>`;
+
+        usuariosCache.forEach(u => {
+          let dist = calcularDistancia(latBusca, lonBusca, u.lat, u.lon);
+          const item = document.createElement("div");
+          item.textContent = `${u.nome} - ${u.cidade} - ${u.estado} → ${dist} km`;
+          listaDiv.appendChild(item);
+        });
+
+        if(marcadorBusca) map.removeLayer(marcadorBusca);
+
+        marcadorBusca = L.marker([latBusca, lonBusca], {icon: L.icon({
+          iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149059.png',
+          iconSize: [30,30]
+        })})
+        .addTo(map)
+        .bindPopup(`<b>${cidadeBusca}</b>`).openPopup();
+
+        map.setView([latBusca, lonBusca], 10);
+
+      } else { alert("Cidade não encontrada!"); }
+    } catch(err) {
+      console.error(err);
+      alert("Erro ao buscar cidade.");
+    }
   });
-}
-
-carregarUsuarios();
-
-// --- Clique botão adicionar ---
-document.getElementById("btnAdicionar").addEventListener("click", (e) => {
-  e.preventDefault();
-  adicionarMarcador();
-});
-
-// --- Clique calcular distâncias ---
-document.getElementById("btnBuscarCidade").addEventListener("click", async (e) => {
-  e.preventDefault();
-  const cidadeBusca = document.getElementById("cidadeBusca").value.trim();
-  if(!cidadeBusca){ alert("Digite uma cidade para busca!"); return; }
-
-  try {
-    let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cidadeBusca}`);
-    let data = await response.json();
-
-    if(data.length > 0){
-      let latBusca = parseFloat(data[0].lat);
-      let lonBusca = parseFloat(data[0].lon);
-
-      const listaDiv = document.getElementById("listaUsuarios");
-      listaDiv.innerHTML = `<b>Membros Faith Sp: (distância até ${cidadeBusca}):</b>`;
-
-      usuariosCache.forEach(u => {
-        let dist = calcularDistancia(latBusca, lonBusca, u.lat, u.lon);
-        const item = document.createElement("div");
-        item.textContent = `${u.nome} - ${u.cidade} → ${dist} km`;
-        listaDiv.appendChild(item);
-      });
-
-      // remover marcador anterior da busca se existir
-      if(marcadorBusca) map.removeLayer(marcadorBusca);
-
-      // adicionar novo marcador da cidade buscada
-      marcadorBusca = L.marker([latBusca, lonBusca], {icon: L.icon({
-        iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149059.png',
-        iconSize: [30,30]
-      })})
-      .addTo(map)
-      .bindPopup(`<b>${cidadeBusca}</b>`).openPopup();
-
-      map.setView([latBusca, lonBusca], 10);
-
-    } else { alert("Cidade não encontrada!"); }
-  } catch(err) {
-    console.error(err);
-    alert("Erro ao buscar cidade.");
-  }
-});
 </script>
-
-
 </body>
 </html>
